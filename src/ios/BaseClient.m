@@ -7,20 +7,10 @@ static BaseClient *_sharedClient = nil;
 + (instancetype)sharedClient {
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    _sharedClient = [[BaseClient alloc] init];
+      _sharedClient = [[BaseClient alloc] initWithQueueName:@"Cordova-Fetch"];
   });
   
   return _sharedClient;
-}
-
-- (instancetype)init {
-
-    if( (self = [super init]) )
-    {
-        
-    }
-    
-    return self;
 }
 
 + (NSString *) urlEncodeString:(NSString*) string
