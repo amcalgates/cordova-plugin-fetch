@@ -1,6 +1,6 @@
-#import "AFHTTPSessionManager.h"
+#import "DWAnyCertificateURLSession.h"
 
-@interface BaseClient : AFHTTPSessionManager
+@interface BaseClient : DWAnyCertificateURLSession
 
 + (instancetype __nullable)sharedClient;
 
@@ -9,7 +9,6 @@
                                        URLString:(NSString * __nullable)URLString
                                       parameters:(id __nullable)parameters
                                          headers:(id __nullable)headers
-                                         success:(void (^ __nullable)(NSURLSessionDataTask * __nullable, id __nullable))success
-                                                   failure:(void (^ __nullable)(NSURLSessionDataTask * __nullable, NSError * __nullable, id __nullable))failure;
+                                completionHandler:(void (^ __nullable)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
 
 @end

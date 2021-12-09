@@ -1,6 +1,5 @@
 #import "FetchPlugin.h"
 #import "BaseClient.h"
-#import "AFNetworkActivityLogger.h"
 
 @interface FetchPlugin()
 
@@ -11,7 +10,7 @@
 
 - (void)pluginInitialize {
   
-  [[AFNetworkActivityLogger sharedLogger] startLogging];
+  
 }
 
 - (void)fetch:(CDVInvokedUrlCommand *)command {
@@ -29,59 +28,65 @@
   }
   
   FetchPlugin *__weak weakSelf = self;
-  NSURLSessionDataTask *dataTask = [[BaseClient sharedClient] dataTaskWithHTTPMethod:method URLString:urlString parameters:body headers:headers success:^(NSURLSessionDataTask *task, id responseObject) {
-    NSHTTPURLResponse *response = (NSHTTPURLResponse *)task.response;
+  NSURLSessionDataTask *dataTask = [[BaseClient sharedClient]
+                                    dataTaskWithHTTPMethod:method
+                                    URLString:urlString
+                                    parameters:body
+                                    headers:headers
+                                    completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
     
-    NSMutableDictionary *result = [NSMutableDictionary dictionary];
-    [result setObject:[NSNumber numberWithInteger:response.statusCode] forKey:@"status"];
-    
-    if ([response respondsToSelector:@selector(allHeaderFields)]) {
-      [result setObject:[response allHeaderFields] forKey:@"headers"];
-    }
-    
-    if (response.URL != nil && response.URL.absoluteString != nil) {
-      [result setObject:response.URL.absoluteString forKey:@"url"];
-    }
-    
-    if (responseObject !=nil && [responseObject isKindOfClass:[NSData class]]) {
-      NSString *body = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
-      if (body == nil) {
-          body = [responseObject base64EncodedStringWithOptions:0];
-          [result setObject:[NSNumber numberWithBool:true] forKey:@"isBlob"];
-      }
-      [result setObject:body forKey:@"body"];
-    }
-    
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
-    [pluginResult setKeepCallbackAsBool:YES];
-    [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  } failure:^(NSURLSessionTask *task, NSError *error, id responseObject) {
-    NSHTTPURLResponse *response = (NSHTTPURLResponse *)task.response;
-    
-    NSMutableDictionary *result = [NSMutableDictionary dictionary];
-    [result setObject:[NSNumber numberWithInteger:response.statusCode] forKey:@"status"];
-    
-    if ([response respondsToSelector:@selector(allHeaderFields)]) {
-      [result setObject:[response allHeaderFields] forKey:@"headers"];
-    }
-    
-    [result setObject:[error localizedDescription] forKey:@"error"];
-
-    if (error != nil && responseObject == nil) {
-      CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:result];
-      [pluginResult setKeepCallbackAsBool:YES];
-      [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-    } else {
-      if (responseObject !=nil && [responseObject isKindOfClass:[NSData class]]) {
-        [result setObject:[[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding] forKey:@"statusText"];
+      NSMutableDictionary *result = [NSMutableDictionary dictionary];
+      
+      if( [response isKindOfClass:[NSHTTPURLResponse class]] )
+      {
+          NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse*)response;
+          [result setObject:[NSNumber numberWithInteger:httpResponse.statusCode] forKey:@"status"];
+          [result setObject:[httpResponse allHeaderFields] ?: @{} forKey:@"headers"];
       }
       
-      CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
-      [pluginResult setKeepCallbackAsBool:YES];
-      [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }
-    
+      if( error != nil )
+      {
+          [result setObject:[error localizedDescription] forKey:@"error"];
+
+          if( error != nil
+             && data == nil )
+          {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:result];
+            [pluginResult setKeepCallbackAsBool:YES];
+            [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
+          }
+          else
+          {
+            if(data != nil ) {
+              [result setObject:[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] forKey:@"statusText"];
+            }
+            
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+            [pluginResult setKeepCallbackAsBool:YES];
+            [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+          }
+      }
+      else
+      {
+          if (response.URL != nil && response.URL.absoluteString != nil) {
+            [result setObject:response.URL.absoluteString forKey:@"url"];
+          }
+          
+          if( data !=nil )
+          {
+            NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+            if (body == nil) {
+                body = [data base64EncodedStringWithOptions:0];
+                [result setObject:[NSNumber numberWithBool:true] forKey:@"isBlob"];
+            }
+            [result setObject:body forKey:@"body"];
+          }
+          
+          CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:result];
+          [pluginResult setKeepCallbackAsBool:YES];
+          [weakSelf.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+      }
   }];
   
   [dataTask resume];

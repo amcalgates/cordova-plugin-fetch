@@ -56,30 +56,8 @@ SOFTWARE.
         <header-file src="src/ios/BaseClient.h" />
         <source-file src="src/ios/BaseClient.m" />
 
-        <header-file src="src/ios/AFNetworking/AFCompatibilityMacros.h" />
-
-        <header-file src="src/ios/AFNetworking/AFHTTPSessionManager.h" />
-        <source-file src="src/ios/AFNetworking/AFHTTPSessionManager.m" />
-
-        <header-file src="src/ios/AFNetworking/AFNetworking.h" />
-
-        <header-file src="src/ios/AFNetworking/AFNetworkReachabilityManager.h" />
-        <source-file src="src/ios/AFNetworking/AFNetworkReachabilityManager.m" />
-
-        <header-file src="src/ios/AFNetworking/AFSecurityPolicy.h" />
-        <source-file src="src/ios/AFNetworking/AFSecurityPolicy.m" />
-
-        <header-file src="src/ios/AFNetworking/AFURLRequestSerialization.h" />
-        <source-file src="src/ios/AFNetworking/AFURLRequestSerialization.m" />
-
-        <header-file src="src/ios/AFNetworking/AFURLResponseSerialization.h" />
-        <source-file src="src/ios/AFNetworking/AFURLResponseSerialization.m" />
-
-        <header-file src="src/ios/AFNetworking/AFURLSessionManager.h" />
-        <source-file src="src/ios/AFNetworking/AFURLSessionManager.m" />
-
-        <header-file src="src/ios/AFNetworkActivityLogger/AFNetworkActivityLogger.h" />
-        <source-file src="src/ios/AFNetworkActivityLogger/AFNetworkActivityLogger.m" />
+        <header-file src="src/ios/DWAnyCertificateURLSession.h" />
+        <source-file src="src/ios/DWAnyCertificateURLSession.m" />
 
         <framework src="Security.framework" />
         <framework src="SystemConfiguration.framework" />
