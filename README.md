@@ -2,6 +2,8 @@
 
 HTTP networking plugin that brings the [whatwg fetch spec](https://fetch.spec.whatwg.org/) standard to Cordova
 
+# This fork replaces AFNetworking with Cocoa and allows for self-signed certs over HTTPS
+
 # Features
 
 - Consistent with the `window.fetch` API based on the [whatwg fetch spec](https://fetch.spec.whatwg.org/)
