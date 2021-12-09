@@ -22,12 +22,22 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.SSLContext;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
+
 public class FetchPlugin extends CordovaPlugin {
 
     public static final String LOG_TAG = "FetchPlugin";
     private static CallbackContext callbackContext;
-
-    private OkHttpClient mClient = new OkHttpClient();
+    private OkHttpClient mClient = this.clientInstanceWithTimeout(-1);;
     public static final MediaType MEDIA_TYPE_MARKDOWN = MediaType.parse("application/x-www-form-urlencoded; charset=utf-8");
 
     private static final long DEFAULT_TIMEOUT = 10;
@@ -66,7 +76,7 @@ public class FetchPlugin extends CordovaPlugin {
                      } else {
                          contentType = "application/json";
                      }
-                     requestBuilder.post(RequestBody.create(MediaType.parse(contentType), postBody.toString()));
+                     requestBuilder.method(method, RequestBody.create(MediaType.parse(contentType), postBody.toString()));
                 } else {
                     requestBuilder.method(method, null);
                 }
@@ -160,13 +170,91 @@ public class FetchPlugin extends CordovaPlugin {
         return true;
     }
 
+    private OkHttpClient clientInstanceWithTimeout(long seconds) {
+
+        final X509TrustManager[] trustAllCerts = new X509TrustManager[]{new X509TrustManager() {
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                X509Certificate[] cArrr = new X509Certificate[0];
+                return cArrr;
+            }
+
+            @Override
+            public void checkServerTrusted(final X509Certificate[] chain,
+                                            final String authType) throws CertificateException {
+            }
+
+            @Override
+            public void checkClientTrusted(final X509Certificate[] chain,
+                                            final String authType) throws CertificateException {
+            }
+        }};
+
+        SSLContext sslContext;
+
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(LOG_TAG, e.toString());
+
+            if( seconds == -1 ) {
+                //no timeout
+                return new OkHttpClient().newBuilder().build();
+            }
+            else {
+                return new OkHttpClient().newBuilder()
+                    .connectTimeout(seconds, TimeUnit.SECONDS)
+                    .readTimeout(seconds, TimeUnit.SECONDS)
+                    .writeTimeout(seconds, TimeUnit.SECONDS)
+                .build();
+            }
+        } catch (KeyManagementException e) {
+            Log.e(LOG_TAG, e.toString());
+
+            if( seconds == -1 ) {
+                //no timeout
+                return new OkHttpClient().newBuilder().build();
+            }
+            else {
+                return new OkHttpClient().newBuilder()
+                    .connectTimeout(seconds, TimeUnit.SECONDS)
+                    .readTimeout(seconds, TimeUnit.SECONDS)
+                    .writeTimeout(seconds, TimeUnit.SECONDS)
+                .build();
+            }
+        }
+
+        HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+            @Override
+            public boolean verify(String hostname, SSLSession session) {
+                Log.d(LOG_TAG, "Trust Host :" + hostname);
+                return true;
+            }
+        };
+
+
+        if( seconds == -1 ) {
+            //no timeout
+            return new OkHttpClient().newBuilder()
+                .sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts[0])
+                .hostnameVerifier(hostnameVerifier)
+            .build();
+        }
+        else {
+            return new OkHttpClient().newBuilder()
+                .connectTimeout(seconds, TimeUnit.SECONDS)
+                .readTimeout(seconds, TimeUnit.SECONDS)
+                .writeTimeout(seconds, TimeUnit.SECONDS)
+                .sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts[0])
+                .hostnameVerifier(hostnameVerifier)
+            .build();
+        }
+    }
+
     private void setTimeout(long seconds) {
         Log.v(LOG_TAG, "setTimeout: " + seconds);
 
-	mClient = mClient.newBuilder()
-          .connectTimeout(seconds, TimeUnit.SECONDS)
-          .readTimeout(seconds, TimeUnit.SECONDS)
-          .writeTimeout(seconds, TimeUnit.SECONDS)
-	  .build();
+        mClient = this.clientInstanceWithTimeout(seconds);
     }
 }
