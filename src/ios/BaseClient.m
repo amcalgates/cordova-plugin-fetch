@@ -110,63 +110,70 @@ static BaseClient *_sharedClient = nil;
     return nil;
 }
 
-+ (void) addParameters:(nullable NSDictionary*)parameters
++ (void) addParameters:(nullable id)parameters
              toRequest:(nonnull NSMutableURLRequest*)request
 {
-    
-    if( [request.HTTPMethod isEqualToString:@"GET"] )
+    if( [parameters isKindOfClass:[NSDictionary class]] )
     {
-        //add to GET
-        NSString *getString = [BaseClient urlEncodedStringForObject:parameters];
-        
-        if( getString != nil )
+        if( [request.HTTPMethod isEqualToString:@"GET"] )
         {
-            NSString *baseString = request.URL.absoluteString;
-            
-            request.URL = [NSURL URLWithString:[NSString stringWithFormat:@"%@?%@", baseString, getString]];
-        }
-    }
-    else
-    {
-        //encode as JSON, otherwise encode normally as GET string
-        NSString *contentType = [request valueForHTTPHeaderField:@"Content-Type"];
-        
-        if( [[contentType lowercaseString] rangeOfString:@"json"].location != NSNotFound )
-        {
-            //add to POST and PUT as JSON per docs
-            if( parameters == nil )
-            {
-                parameters = @{};
-            }
-            
-            NSData *bodyData = nil;
-            NSJSONWritingOptions options = 0;//IS_DEV ? NSJSONWritingPrettyPrinted : 0;
-            NSError *jsonError = nil;
-            
-            @try{
-                bodyData = [NSJSONSerialization dataWithJSONObject:parameters
-                                                           options:options
-                                                             error:&jsonError];
-                
-            }@catch(NSException *e){}
-            
-            
-            if( bodyData != nil
-               && jsonError == nil )
-            {
-                request.HTTPBody = bodyData;
-            }
-            else if( jsonError != nil )
-            {
-                NSLog(@"ERROR parsing JSON: %@", jsonError.localizedDescription);
-            }
-        }
-        else if( parameters != nil )
-        {
+            //add to GET
             NSString *getString = [BaseClient urlEncodedStringForObject:parameters];
-            request.HTTPBody = [getString dataUsingEncoding:NSUTF8StringEncoding];
+            
+            if( getString != nil )
+            {
+                NSString *baseString = request.URL.absoluteString;
+                
+                request.URL = [NSURL URLWithString:[NSString stringWithFormat:@"%@?%@", baseString, getString]];
+            }
+        }
+        else
+        {
+            //encode as JSON, otherwise encode normally as GET string
+            NSString *contentType = [request valueForHTTPHeaderField:@"Content-Type"];
+            
+            if( [[contentType lowercaseString] rangeOfString:@"json"].location != NSNotFound )
+            {
+                //add to POST and PUT as JSON per docs
+                if( parameters == nil )
+                {
+                    parameters = @{};
+                }
+                
+                NSData *bodyData = nil;
+                NSJSONWritingOptions options = 0;//IS_DEV ? NSJSONWritingPrettyPrinted : 0;
+                NSError *jsonError = nil;
+                
+                @try{
+                    bodyData = [NSJSONSerialization dataWithJSONObject:parameters
+                                                               options:options
+                                                                 error:&jsonError];
+                    
+                }@catch(NSException *e){}
+                
+                
+                if( bodyData != nil
+                   && jsonError == nil )
+                {
+                    request.HTTPBody = bodyData;
+                }
+                else if( jsonError != nil )
+                {
+                    NSLog(@"ERROR parsing JSON: %@", jsonError.localizedDescription);
+                }
+            }
+            else if( parameters != nil )
+            {
+                NSString *getString = [BaseClient urlEncodedStringForObject:parameters];
+                request.HTTPBody = [getString dataUsingEncoding:NSUTF8StringEncoding];
+            }
         }
     }
+    else if( [parameters isKindOfClass:[NSString class]] )
+    {
+        request.HTTPBody = [parameters dataUsingEncoding:NSUTF8StringEncoding];
+    }
+    
 }
 
 
